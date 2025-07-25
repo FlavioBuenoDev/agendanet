@@ -1,7 +1,7 @@
 # backend/app/models.py
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, DECIMAL, Enum, ForeignKey
-from sqlalchemy.orm import relationship # Importe para definir relacionamentos entre tabelas
+from sqlalchemy import Column, Integer, String, Text, DateTime, DECIMAL, Enum, ForeignKey# type: ignore
+from sqlalchemy.orm import relationship # Importe para definir relacionamentos entre tabelas# type: ignore
 from .database import Base # Importa o 'Base' que você definiu em database.py
 from datetime import datetime
 
