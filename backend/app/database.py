@@ -1,0 +1,5 @@
+MYSQL_USER=root
+MYSQL_PASSWORD=mysql # **MUDE ISSO LUAN!**
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_DB=salao_agendamento_db

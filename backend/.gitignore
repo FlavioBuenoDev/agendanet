@@ -1,0 +1,10 @@
+# Para adicionar um arquivo ao .gitignore, basta escrever o nome ou caminho do arquivo.
+# Exemplo para ignorar o arquivo secrets.txt:
+
+secrets.txt
+
+# Para ignorar uma pasta inteira:
+node_modules/
+
+# Para ignorar todos os arquivos .env:
+*.env
