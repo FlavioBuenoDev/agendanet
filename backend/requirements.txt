@@ -1,8 +1,9 @@
 fastapi
 uvicorn
 SQLAlchemy
-mysqlclient # Ou asyncmy, se preferir um driver assíncrono
+mysql-connector-python
 python-dotenv
 alembic
-passlib[bcrypt] # Para hash de senhas
-python-jose[cryptography] # Para JWT/Autenticação (vamos usar mais tarde)
+passlib[bcrypt]
+python-jose[cryptography]
+email-validator

@@ -56,3 +56,35 @@ class Servico(Base):
 
     salao = relationship("Salao", back_populates="servicos")
     agendamentos = relationship("Agendamento", back_populates="servico") # Já pensando no relacionamento com Agendamento
+    
+    
+class Cliente(Base):
+    __tablename__ = "clientes"
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(255), nullable=False)
+    telefone = Column(String(20))
+    email = Column(String(255))
+    criado_em = Column(DateTime, default=datetime.now)
+    atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    agendamentos = relationship("Agendamento", back_populates="cliente")
+
+class Agendamento(Base):
+    __tablename__ = "agendamentos"
+    id = Column(Integer, primary_key=True, index=True)
+    salao_id = Column(Integer, ForeignKey("saloes.id"), nullable=False)
+    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    profissional_id = Column(Integer, ForeignKey("profissionais.id"), nullable=False)
+    servico_id = Column(Integer, ForeignKey("servicos.id"), nullable=False)
+    data_hora_inicio = Column(DateTime, nullable=False)
+    data_hora_fim = Column(DateTime, nullable=False)
+    status = Column(Enum('agendado', 'confirmado', 'cancelado', 'concluido'), default='agendado')
+    observacoes = Column(Text)
+    criado_em = Column(DateTime, default=datetime.now)
+    atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    # Relacionamentos
+    salao = relationship("Salao", back_populates="agendamentos")
+    cliente = relationship("Cliente", back_populates="agendamentos")
+    profissional = relationship("Profissional", back_populates="agendamentos")
+    servico = relationship("Servico", back_populates="agendamentos")

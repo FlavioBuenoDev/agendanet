@@ -1,9 +1,24 @@
+import os
+import sys
+from pathlib import Path
 from logging.config import fileConfig
+from sqlalchemy import engine_from_config # type: ignore
+from sqlalchemy import pool # type: ignore
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
 
 from alembic import context
+
+# Adicione estas linhas para que o Python encontre sua aplicação
+# Isso adiciona a pasta 'backend' ao PYTHONPATH
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+# Ou, se preferir uma abordagem mais direta para o caminho da sua app:
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Importe sua Base e seus modelos
+from app.database import Base # Importa a Base que você definiu em database.py
+from app import models # Importa o módulo models.py para que Alembic veja seus modelos
+# Ou, se preferir importar todos os modelos explicitamente:
+# from app.models import Salao, Profissional, Servico, Cliente, Agendamento
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -18,7 +33,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -65,7 +80,7 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, target_metadata=target_metadata, compare_type=True
         )
 
         with context.begin_transaction():
@@ -73,6 +88,8 @@ def run_migrations_online() -> None:
 
 
 if context.is_offline_mode():
-    run_migrations_offline()
+   # run_migrations_offline()
+   context.get_bind().dialect.supports_comments = True
+   context.get_bind().dialect.supports_views = True
 else:
     run_migrations_online()
