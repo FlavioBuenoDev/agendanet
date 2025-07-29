@@ -209,19 +209,3 @@ def delete_agendamento(agendamento_id: int, db: Session = Depends(get_db)):
 
 
 
-
-
-
-# Continue a adicionar endpoints para Profissionais, Serviços, Clientes e Agendamentos
-
-
-
-
-
-# Você continuará adicionando endpoints para:
-# - Criar, ler, atualizar e deletar Profissionais
-# - Criar, ler, atualizar e deletar Serviços
-# - Criar, ler, atualizar e deletar Clientes
-# - Criar, ler, atualizar e deletar Agendamentos
-
-# Exemplo de endpoint para criar um profissional
