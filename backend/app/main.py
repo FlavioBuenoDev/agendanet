@@ -201,8 +201,3 @@ def delete_agendamento(agendamento_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Agendamento não encontrado")
     crud.delete_agendamento(db=db, agendamento_id=agendamento_id)
     return {"detail": "Agendamento deletado com sucesso"}
-
-    
-
-
-
