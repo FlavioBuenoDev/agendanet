@@ -2,8 +2,19 @@
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, DECIMAL, Enum, ForeignKey# type: ignore
 from sqlalchemy.orm import relationship # Importe para definir relacionamentos entre tabelas# type: ignore
-from .database import Base # Importa o 'Base' que você definiu em database.py
+#from .database import Base # Importa o 'Base' que você definiu em database.py
+
+# backend/app/models.py
+#from sqlalchemy.ext.declarative import declarative_base # type: ignore # NOVO: Importe aqui
+from sqlalchemy.orm import declarative_base # type: ignore
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text # type: ignore
+from sqlalchemy.orm import relationship # type: ignore
+from sqlalchemy.sql import func # type: ignore # Para datas automáticas
+
+
 from datetime import datetime
+
+Base = declarative_base()
 
 class Salao(Base):
     __tablename__ = "saloes" # Define o nome da tabela no banco de dados

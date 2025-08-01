@@ -1,49 +1,48 @@
 # backend/app/schemas.py
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 from datetime import datetime
 
-
-# Define os esquemas Pydantic para validação e serialização de dados
-
-# Classe Salao
+# --- Esquemas para Salão ---
 class SalaoBase(BaseModel):
     nome: str
     endereco: Optional[str] = None
     telefone: Optional[str] = None
-    email: EmailStr # Usa EmailStr para validação de formato de e-mail
+    email: EmailStr
+    
+    model_config = ConfigDict(from_attributes=True)
 
 class SalaoCreate(SalaoBase):
-    senha: str # A senha será enviada na criação, mas não retornada
+    senha: str
 
 class Salao(SalaoBase):
     id: int
     criado_em: datetime
     atualizado_em: datetime
 
-    class Config:
-        orm_mode = True # Importante para que o Pydantic possa ler dados de modelos SQLAlchemy
-    
 class SalaoUpdate(SalaoBase):
-    senha: Optional[str] = None # Permite atualizar o salão sem precisar enviar a senha novamente
+    senha: Optional[str] = None
 
 class SalaoDelete(BaseModel):
     id: int
     message: str = "Salão deletado com sucesso"
-    
-            
-# Classe Profissional
+
+
+
+# --- Esquemas para Profissional ---
 class ProfissionalBase(BaseModel):
     nome: str
     especialidade: Optional[str] = None
     telefone: Optional[str] = None
     email: Optional[EmailStr] = None
     
+    model_config = ConfigDict(from_attributes=True)
+    
 class ProfissionalCreate(ProfissionalBase):
-    salao_id: int # Necessário para criar um profissional associado a um salão
+    salao_id: int
     
 class ProfissionalUpdate(ProfissionalBase):
-    senha: Optional[str] = None # Permite atualizar o profissional sem precisar enviar a senha novamente
+    senha: Optional[str] = None
     
 class ProfissionalDelete(BaseModel):
     id: int
@@ -55,107 +54,87 @@ class Profissional(ProfissionalBase):
     criado_em: datetime
     atualizado_em: datetime
 
-    class Config:
-        orm_mode = True # Permite que o Pydantic leia dados de modelos SQLAlchemy
 
-class Profissional(ProfissionalBase):
-    id: int
-    salao_id: int
-    criado_em: datetime
-    atualizado_em: datetime
 
-    class Config:
-        orm_mode = True # Permite que o Pydantic leia dados de modelos SQLAlchemy
- 
-       
-# Classe Servico
+# --- Esquemas para Serviço ---
 class ServicoBase(BaseModel):
     nome: str
     descricao: Optional[str] = None
     duracao_minutos: int
-    preco: float # Usando float para representar valores monetários
+    preco: float
     
+    model_config = ConfigDict(from_attributes=True)
+
 class ServicoCreate(ServicoBase):
-    salao_id: int # Necessário para criar um serviço associado a um salão
+    salao_id: int
     
 class Servico(ServicoBase):
     id: int
     salao_id: int
     criado_em: datetime
     atualizado_em: datetime
-
-    class Config:
-        orm_mode = True # Permite que o Pydantic leia dados de modelos SQLAlchemy
-   
-class ServicoUpdate(ServicoBase):
-    pass # Pode ser estendido se necessário
     
-# Classe ServicoDelete
+class ServicoUpdate(ServicoBase):
+    pass
+
 class ServicoDelete(BaseModel):
     id: int
     message: str = "Serviço deletado com sucesso"
 
-        
-# Classe Cliente
+
+
+# --- Esquemas para Cliente ---
 class ClienteBase(BaseModel):
     nome: str
     telefone: Optional[str] = None
     email: Optional[EmailStr] = None
     
+    model_config = ConfigDict(from_attributes=True)
+
 class ClienteCreate(ClienteBase):
-    pass # Pode ser estendido se necessário
+    pass
 
 class Cliente(ClienteBase):
     id: int
     criado_em: datetime
     atualizado_em: datetime
 
-    class Config:
-        orm_mode = True # Permite que o Pydantic leia dados de modelos SQLAlchemy   
-
 class ClienteUpdate(ClienteBase):
-    pass # Pode ser estendido se necessário
+    pass
 
 class ClienteDelete(BaseModel):
     id: int
-    message: str = "Cliente deletado com sucesso" 
- 
+    message: str = "Cliente deletado com sucesso"
 
-# Schema Base para Agendamento - contém os campos comuns
+
+# --- Esquemas para Agendamento ---
 class AgendamentoBase(BaseModel):
     salao_id: int
     cliente_id: int
     profissional_id: int
     servico_id: int
-    # Inclua data_hora_inicio e data_hora_fim aqui
-    data_hora_inicio: datetime # Deve corresponder ao tipo do seu modelo
-    data_hora_fim: datetime   # Deve corresponder ao tipo do seu modelo
-    status: Optional[str] = "agendado" # Status pode ser opcional com um valor padrão
+    data_hora_inicio: datetime
+    data_hora_fim: datetime
+    status: Optional[str] = "agendado"
     observacoes: Optional[str] = None
+    
+    model_config = ConfigDict(from_attributes=True)
 
-# Schema para Criação - herda do Base
 class AgendamentoCreate(AgendamentoBase):
-    pass # No seu caso, pode herdar diretamente ou adicionar campos específicos se houver
+    pass
 
-# Schema para Leitura - herda do Base e adiciona campos gerados pelo DB
 class Agendamento(AgendamentoBase):
     id: int
     criado_em: datetime
     atualizado_em: datetime
-
-    class Config:
-        orm_mode = True # Permite que o Pydantic leia dados de modelos SQLAlchemy
-        
-# Schema para Atualização - herda do Base
+    
 class AgendamentoUpdate(AgendamentoBase):
-    pass # Pode ser estendido se necessário
+    pass
 
-# Schema para Exclusão
 class AgendamentoDelete(BaseModel):
     id: int
     message: str = "Agendamento deletado com sucesso"
     
-# Schema para Listagem de Agendamentos
 class AgendamentoList(BaseModel):
     id: int
     cliente_id: int
@@ -168,6 +147,4 @@ class AgendamentoList(BaseModel):
     criado_em: datetime
     atualizado_em: datetime
 
-    class Config:
-        orm_mode = True # Permite que o Pydantic leia dados de modelos SQLAlchemy
-        
+    model_config = ConfigDict(from_attributes=True)
