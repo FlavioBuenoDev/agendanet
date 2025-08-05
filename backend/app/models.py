@@ -24,7 +24,7 @@ class Salao(Base):
     nome = Column(String(255), nullable=False)
     endereco = Column(String(255))
     telefone = Column(String(20))
-    email = Column(String(255), unique=True, nullable=False)
+    email = Column(String(255), unique=True)
     senha_hash = Column(String(255), nullable=False)
     criado_em = Column(DateTime, default=datetime.now)
     atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
@@ -74,7 +74,7 @@ class Cliente(Base):
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String(255), nullable=False)
     telefone = Column(String(20))
-    email = Column(String(255))
+    email = Column(String(255), unique=True, index=True)
     criado_em = Column(DateTime, default=datetime.now)
     atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 

@@ -1,5 +1,7 @@
 # backend/app/main.py
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request, status
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError # type: ignore
 from sqlalchemy.orm import Session # type: ignore
 from typing import List
 
@@ -11,6 +13,15 @@ app = FastAPI(
     description="API para gerenciar agendamentos, salões, profissionais, serviços e clientes.",
     version="0.1.0",
 )
+
+# Manipulador global para IntegrityError
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request: Request, exc: IntegrityError):
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": "E-mail já cadastrado."}
+    )
+
 
 @app.get("/")
 def read_root():

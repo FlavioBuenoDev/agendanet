@@ -201,6 +201,8 @@ def create_cliente(db: Session, cliente: schemas.ClienteCreate):
     db.commit()
     db.refresh(db_cliente)
     return db_cliente
+
+# Função para atualizar cliente
 def update_cliente(db: Session, cliente_id: int, cliente: schemas.ClienteUpdate):
     db_cliente = get_cliente(db, cliente_id)
     if not db_cliente:
@@ -216,6 +218,8 @@ def update_cliente(db: Session, cliente_id: int, cliente: schemas.ClienteUpdate)
     db.commit()
     db.refresh(db_cliente)
     return db_cliente
+
+# Função para deletar cliente
 def delete_cliente(db: Session, cliente_id: int):
     db_cliente = get_cliente(db, cliente_id)
     if not db_cliente:
@@ -223,6 +227,11 @@ def delete_cliente(db: Session, cliente_id: int):
     db.delete(db_cliente)
     db.commit()
     return db_cliente
+
+# Função para obter cliente por e-mail (para verificação de duplicidade)
+def get_cliente_by_email(db: Session, email: str):
+    return db.query(models.Cliente).filter(models.Cliente.email == email).first()
+
 
 ############################### AGENDAMENTOS
 def get_agendamento(db: Session, agendamento_id: int):
