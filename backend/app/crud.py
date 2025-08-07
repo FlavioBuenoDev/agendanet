@@ -1,7 +1,10 @@
 # backend/app/crud.py
+import datetime
 from sqlalchemy.orm import Session # type: ignore
 from . import models, schemas
 from passlib.context import CryptContext # type: ignore # Para hash de senhas
+from . import models
+from sqlalchemy import or_, and_ # type: ignore
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -234,6 +237,8 @@ def get_cliente_by_email(db: Session, email: str):
 
 
 ############################### AGENDAMENTOS
+
+# Funções CRUD para Agendamento
 def get_agendamento(db: Session, agendamento_id: int):
     return db.query(models.Agendamento).filter(models.Agendamento.id == agendamento_id).first()
 def get_agendamentos(db: Session, skip: int = 0, limit: int = 100):
@@ -276,6 +281,7 @@ def update_agendamento(db: Session, agendamento_id: int, agendamento: schemas.Ag
     db.commit()
     db.refresh(db_agendamento)
     return db_agendamento
+# Função para deletar agendamento
 def delete_agendamento(db: Session, agendamento_id: int):
     db_agendamento = get_agendamento(db, agendamento_id)
     if not db_agendamento:
@@ -284,8 +290,28 @@ def delete_agendamento(db: Session, agendamento_id: int):
     db.commit()
     return db_agendamento
 
-
-
+# Função para obter agendamentos conflitantes
+def get_agendamentos_conflitantes(
+    db: Session, profissional_id: int, data_hora_inicio: datetime, data_hora_fim: datetime
+):
+    # (DEBUG)
+    print(f"--- Buscando conflito ---")
+    print(f"Profissional ID: {profissional_id}")
+    print(f"Início: {data_hora_inicio}")
+    print(f"Fim: {data_hora_fim}")
+    """
+    Verifica se existe algum agendamento para o profissional
+    que se sobrepõe ao novo horário.
+    """
+    return (
+        db.query(models.Agendamento)
+        .filter(models.Agendamento.profissional_id == profissional_id)
+        .filter(
+            models.Agendamento.data_hora_inicio < data_hora_fim,
+            models.Agendamento.data_hora_fim > data_hora_inicio
+        )
+        .first()
+    )
 
 # Você também adicionará funções para atualizar e deletar salões,
 # e funções CRUD para Profissional, Servico, Cliente e Agendamento.

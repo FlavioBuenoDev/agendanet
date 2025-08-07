@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine # type: ignore
 #from sqlalchemy.ext.declarative import declarative_base # type: ignore
 #from sqlalchemy.orm import declarative_base # type: ignore # Apenas mude o 'ext.declarative' para 'orm' (Atualização de acordo com a documentação mais recente do SQLAlchemy)
-from sqlalchemy.orm import sessionmaker # type: ignore
+from sqlalchemy.orm import sessionmaker, declarative_base # type: ignore
 
 from app.models import Base # <-- Agora a Base vem de models
 
@@ -27,9 +27,12 @@ SQLALCHEMY_DATABASE_URL = (
 '''
 # A URL do banco de dados deve ser lida de uma variável de ambiente 
  
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL",f"mysql+mysqlconnector://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}")
+#SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL",f"mysql+mysqlconnector://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}")
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sql_app.db")
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+                       
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base = declarative_base()

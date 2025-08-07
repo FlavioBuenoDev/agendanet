@@ -4,30 +4,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError # type: ignore
 from sqlalchemy.orm import Session # type: ignore
 from typing import List
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine # type: ignore
-from sqlalchemy.orm import sessionmaker, Session # type: ignore
-from contextlib import contextmanager
-from .database import Base, get_db
-from .routes import saloes, profissionais, servicos, clientes, agendamentos
 
 from .database import get_db
 from . import models, schemas, crud # Importação do crud e os schemas
 
-''''
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-def override_get_db():
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-'''
-        
 app = FastAPI(
     title="API de Agendamento Salão de Beleza",
     description="API para gerenciar agendamentos, salões, profissionais, serviços e clientes.",
@@ -200,21 +180,8 @@ def delete_cliente(cliente_id: int, db: Session = Depends(get_db)):
 
 # Endpoint para criar um agendamento
 @app.post("/agendamentos/", response_model=schemas.Agendamento, status_code=status.HTTP_201_CREATED)
-def create_agendamento(agendamento: schemas.AgendamentoCreate, db: Session = Depends(get_db)):
-    # 1. Verifique se há um agendamento em conflito para o profissional
-    conflito = crud.get_agendamentos_conflitantes(
-        db,
-        profissional_id=agendamento.profissional_id,
-        data_hora_inicio=agendamento.data_hora_inicio,
-        data_hora_fim=agendamento.data_hora_fim
-    )
-    if conflito:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Já existe um agendamento para este profissional neste horário."
-        )
-
-    # 2. Se não houver conflito, crie o agendamento
+def create_agendamento(agendamento: schemas.AgendamentoCreate, db: Session = Depends
+(get_db)):
     return crud.create_agendamento(db=db, agendamento=agendamento)
 
 # Endpoint para listar agendamentos
