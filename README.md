@@ -58,3 +58,25 @@ Para iniciar o servidor com o Uvicorn, execute o seguinte comando na raiz do pro
 
 ```bash
 uvicorn app.main:app --reload
+
+
+
+A API estará disponível em http://127.0.0.1:8000.
+
+🗺️ Endpoints da API
+A documentação interativa (Swagger UI) pode ser acessada em http://127.0.0.1:8000/docs.
+
+Entidades
+/saloes/
+
+/profissionais/
+
+/servicos/
+
+/clientes/
+
+/agendamentos/
+
+✒️ Autor
+Flávio Bueno
+Luan Marques
