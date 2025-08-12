@@ -46,6 +46,7 @@ class Profissional(Base):
     email = Column(String(255))
     criado_em = Column(DateTime, default=datetime.now)
     atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    senha_hash = Column(String(255), nullable=False)
 
     salao = relationship("Salao", back_populates="profissionais") # Relacionamento de volta para o Salão
     agendamentos = relationship("Agendamento", back_populates="profissional")
@@ -77,6 +78,7 @@ class Cliente(Base):
     email = Column(String(255), unique=True, index=True)
     criado_em = Column(DateTime, default=datetime.now)
     atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    senha_hash = Column(String(255), nullable=False)
 
     agendamentos = relationship("Agendamento", back_populates="cliente")
 

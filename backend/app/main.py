@@ -10,7 +10,7 @@ from sqlalchemy import create_engine # type: ignore
 from sqlalchemy.orm import sessionmaker, Session # type: ignore
 from contextlib import contextmanager
 from .database import Base, get_db
-from .routes import saloes, profissionais, servicos, clientes, agendamentos
+from .routes import saloes, profissionais, servicos, clientes, agendamentos, auth
 
 from .database import get_db
 from . import models, schemas, crud # Importação do crud e os schemas
@@ -64,3 +64,6 @@ app.include_router(clientes.router, prefix="/clientes", tags=["clientes"])
 
 ######################### AGENDAMENTOS #########################
 app.include_router(agendamentos.router, prefix="/agendamentos", tags=["agendamentos"])
+
+########################## AUTENTICAÇÃO #########################
+app.include_router(auth.router, tags=["auth"]) # NOVO: Roteador de autenticação

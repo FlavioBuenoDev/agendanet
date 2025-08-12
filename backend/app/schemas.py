@@ -28,7 +28,6 @@ class SalaoDelete(BaseModel):
     message: str = "Salão deletado com sucesso"
 
 
-
 # --- Esquemas para Profissional ---
 class ProfissionalBase(BaseModel):
     nome: str
@@ -39,6 +38,7 @@ class ProfissionalBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
 class ProfissionalCreate(ProfissionalBase):
+    hashed_password: str
     salao_id: int
     
 class ProfissionalUpdate(ProfissionalBase):
@@ -92,6 +92,7 @@ class ClienteBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class ClienteCreate(ClienteBase):
+    senha: str
     pass
 
 class Cliente(ClienteBase):
@@ -100,7 +101,7 @@ class Cliente(ClienteBase):
     atualizado_em: datetime
 
 class ClienteUpdate(ClienteBase):
-    pass
+    senha: Optional[str] = None
 
 class ClienteDelete(BaseModel):
     id: int
@@ -148,3 +149,16 @@ class AgendamentoList(BaseModel):
     atualizado_em: datetime
 
     model_config = ConfigDict(from_attributes=True)
+    
+    
+# -- Schemas de Autenticação (ADICIONADOS) ---
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
+class Login(BaseModel):
+    email: str
+    senha: str

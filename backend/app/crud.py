@@ -5,14 +5,22 @@ from . import models, schemas
 from passlib.context import CryptContext # type: ignore # Para hash de senhas
 from . import models
 from sqlalchemy import or_, and_ # type: ignore
+from .routes.auth import get_password_hash # type: ignore
 
+# Configuração do passlib para o algoritmo bcryp
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def get_password_hash(password: str):
+def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
-def verify_password(plain_password: str, hashed_password: str):
+#def get_password_hash(password: str):
+ #   return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
+
+
+################################ SALÕES
 
 def get_salao(db: Session, salao_id: int):
     return db.query(models.Salao).filter(models.Salao.id == salao_id).first()
@@ -24,13 +32,13 @@ def get_saloes(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Salao).offset(skip).limit(limit).all()
 
 def create_salao(db: Session, salao: schemas.SalaoCreate):
-    hashed_password = get_password_hash(salao.senha)
+    senha = get_password_hash(salao.senha) # type: ignore
     db_salao = models.Salao(
         nome=salao.nome,
         endereco=salao.endereco,
         telefone=salao.telefone,
         email=salao.email,
-        senha_hash=hashed_password
+        senha_hash=senha
     )
     db.add(db_salao)
     db.commit()
@@ -51,7 +59,7 @@ def update_salao(db: Session, salao_id: int, salao: schemas.SalaoUpdate):
     if salao.email:
         db_salao.email = salao.email
     if salao.senha:
-        db_salao.senha_hash = get_password_hash(salao.senha)
+        db_salao.senha_hash = get_password_hash(salao.senha) # type: ignore
     
     db.commit()
     db.refresh(db_salao)
@@ -104,11 +112,13 @@ def get_profissionais_by_salao_and_especialidade_and_nome(db: Session, salao_id:
     ).all()
     
 
-
+# Função para obter todos os profissionais com paginação
 def get_profissionais(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Profissional).offset(skip).limit(limit).all()
 
+# Função para criar profissional
 def create_profissional(db: Session, profissional: schemas.ProfissionalCreate):
+    senha = hash_password(profissional.senha)
     db_profissional = models.Profissional(
         salao_id=profissional.salao_id,
         nome=profissional.nome,
@@ -192,9 +202,14 @@ def delete_servico(db: Session, servico_id: int):
 ############################### CLIENTES
 def get_cliente(db: Session, cliente_id: int):
     return db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
+
+# Função para obter cliente por e-mail
 def get_clientes(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Cliente).offset(skip).limit(limit).all()
+
+# Função para criar cliente
 def create_cliente(db: Session, cliente: schemas.ClienteCreate):
+    senha = hash_password(cliente.senha)
     db_cliente = models.Cliente(
         nome=cliente.nome,
         telefone=cliente.telefone,
@@ -313,5 +328,27 @@ def get_agendamentos_conflitantes(
         .first()
     )
 
-# Você também adicionará funções para atualizar e deletar salões,
-# e funções CRUD para Profissional, Servico, Cliente e Agendamento.
+# ====================================================================
+# FUNÇÕES DE AUTENTICAÇÃO
+# ====================================================================
+
+def get_user_by_email(db: Session, email: str):
+    """
+    Função unificada para buscar um usuário por e-mail em todas as tabelas.
+    """
+    # 1. Tentar encontrar o usuário na tabela Salão
+    salao = db.query(models.Salao).filter(models.Salao.email == email).first()
+    if salao:
+        return salao
+
+    # 2. Se não encontrar, tentar na tabela Profissional
+    profissional = db.query(models.Profissional).filter(models.Profissional.email == email).first()
+    if profissional:
+        return profissional
+
+    # 3. Se ainda não encontrar, tentar na tabela Cliente
+    cliente = db.query(models.Cliente).filter(models.Cliente.email == email).first()
+    if cliente:
+        return cliente
+
+    return None
