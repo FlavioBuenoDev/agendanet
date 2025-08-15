@@ -15,6 +15,7 @@ from datetime import datetime
 
 Base = declarative_base()
 
+# Classe para Salão
 class Salao(Base):
     __tablename__ = "saloes" # Define o nome da tabela no banco de dados
 
@@ -32,8 +33,9 @@ class Salao(Base):
     # Isso permite que você acesse, por exemplo, 'salao.profissionais'
     profissionais = relationship("Profissional", back_populates="salao")
     servicos = relationship("Servico", back_populates="salao")
-    agendamentos = relationship("Agendamento", back_populates="salao")
+    #agendamentos = relationship("Agendamento", back_populates="salao")
 
+# Classe para Profissional
 class Profissional(Base):
     __tablename__ = "profissionais" # Nome da tabela no banco
 
@@ -47,7 +49,8 @@ class Profissional(Base):
     atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     senha_hash = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True)
-
+    
+    salao_id = Column(Integer, ForeignKey("saloes.id"), nullable=False)
     salao = relationship("Salao", back_populates="profissionais") # Relacionamento de volta para o Salão
     agendamentos = relationship("Agendamento", back_populates="profissional")
 
@@ -71,9 +74,10 @@ class Servico(Base):
     salao = relationship("Salao", back_populates="servicos")
     agendamentos = relationship("Agendamento", back_populates="servico") # Já pensando no relacionamento com Agendamento
     
-    
+# Classe para Cliente    
 class Cliente(Base):
     __tablename__ = "clientes"
+    
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String(255), nullable=False)
     telefone = Column(String(20))
@@ -81,25 +85,26 @@ class Cliente(Base):
     criado_em = Column(DateTime, default=datetime.now)
     atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     senha_hash = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True)
 
     agendamentos = relationship("Agendamento", back_populates="cliente")
-
+    
+    
+ ## Classe para Agendamento   
 class Agendamento(Base):
     __tablename__ = "agendamentos"
+
     id = Column(Integer, primary_key=True, index=True)
-    salao_id = Column(Integer, ForeignKey("saloes.id"), nullable=False)
-    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False)
-    profissional_id = Column(Integer, ForeignKey("profissionais.id"), nullable=False)
-    servico_id = Column(Integer, ForeignKey("servicos.id"), nullable=False)
     data_hora_inicio = Column(DateTime, nullable=False)
     data_hora_fim = Column(DateTime, nullable=False)
-    status = Column(Enum('agendado', 'confirmado', 'cancelado', 'concluido'), default='agendado')
-    observacoes = Column(Text)
-    criado_em = Column(DateTime, default=datetime.now)
-    atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    status = Column(String, default="agendado")
+
+    # Chaves estrangeiras para as outras tabelas
+    cliente_id = Column(Integer, ForeignKey("clientes.id"))
+    profissional_id = Column(Integer, ForeignKey("profissionais.id"))
+    servico_id = Column(Integer, ForeignKey("servicos.id"))
 
     # Relacionamentos
-    salao = relationship("Salao", back_populates="agendamentos")
     cliente = relationship("Cliente", back_populates="agendamentos")
     profissional = relationship("Profissional", back_populates="agendamentos")
     servico = relationship("Servico", back_populates="agendamentos")

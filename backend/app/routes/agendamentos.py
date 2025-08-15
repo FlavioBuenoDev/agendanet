@@ -1,58 +1,73 @@
-# backend/app/routes/agendamentos.py (ou o nome do seu arquivo de rotas)
+# app/routes/agendamentos.py
 
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session # type: ignore
+from typing import List, Annotated
 
-from app import schemas, crud
+from app import schemas, crud, models
 from app.database import get_db
+from .auth import get_current_active_cliente, get_current_active_profissional
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/agendamentos",
+    tags=["Agendamentos"]
+)
 
-# Endpoint para criar um agendamento
-@router.post("/", response_model=schemas.Agendamento, status_code=status.HTTP_201_CREATED) # type: ignore
-def create_agendamento(agendamento: schemas.AgendamentoCreate, db: Session = Depends(get_db)):
-    # 1. Verifique se há um agendamento em conflito para o profissional
-    conflito = crud.get_agendamentos_conflitantes(
-        db,
-        profissional_id=agendamento.profissional_id,
-        data_hora_inicio=agendamento.data_hora_inicio,
-        data_hora_fim=agendamento.data_hora_fim
-    )
-    if conflito:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Já existe um agendamento para este profissional neste horário."
-        )
+@router.post("/", response_model=schemas.Agendamento, status_code=status.HTTP_201_CREATED)
+def create_agendamento(
+    agendamento: schemas.AgendamentoCreate,
+    db: Session = Depends(get_db),
+    current_cliente: Annotated[models.Cliente, Depends(get_current_active_cliente)] = None
+):
+    if agendamento.cliente_id != current_cliente.id:
+        raise HTTPException(status_code=403, detail="Não autorizado a criar agendamento para outro cliente")
 
-    # 2. Se não houver conflito, crie o agendamento
-    return crud.create_agendamento(db=db, agendamento=agendamento)
+    try:
+        return crud.create_agendamento(db=db, agendamento=agendamento)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-# Endpoint para listar agendamentos
-@router.get("/", response_model=List[schemas.Agendamento]) # type: ignore
-def read_agendamentos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    agendamentos = crud.get_agendamentos(db, skip=skip, limit=limit)
+@router.get("/me/", response_model=List[schemas.Agendamento])
+def read_agendamentos_cliente(
+    db: Session = Depends(get_db),
+    current_cliente: Annotated[models.Cliente, Depends(get_current_active_cliente)] = None
+):
+    agendamentos = crud.get_agendamentos_by_cliente(db, cliente_id=current_cliente.id)
     return agendamentos
-# Endpoint para obter um agendamento por ID
-@router.get("/{agendamento_id}", response_model=schemas.Agendamento) # type: ignore
-def read_agendamento(agendamento_id: int, db: Session = Depends(get_db)):
-    db_agendamento = crud.get_agendamento(db, agendamento_id=agendamento_id)
-    if db_agendamento is None:
+    
+@router.get("/profissional/", response_model=List[schemas.Agendamento])
+def read_agendamentos_profissional(
+    db: Session = Depends(get_db),
+    current_profissional: Annotated[models.Profissional, Depends(get_current_active_profissional)] = None
+):
+    agendamentos = crud.get_agendamentos_by_profissional(db, profissional_id=current_profissional.id)
+    return agendamentos
+
+@router.get("/{agendamento_id}", response_model=schemas.Agendamento)
+def read_agendamento(
+    agendamento_id: int, 
+    db: Session = Depends(get_db)
+):
+    agendamento = crud.get_agendamento(db, agendamento_id=agendamento_id)
+    if agendamento is None:
         raise HTTPException(status_code=404, detail="Agendamento não encontrado")
-    return db_agendamento
-# Endpoint para atualizar um agendamento
-@router.put("/{agendamento_id}", response_model=schemas.Agendamento) # type: ignore
-def update_agendamento(agendamento_id: int, agendamento: schemas.AgendamentoUpdate
-                        , db: Session = Depends(get_db)):
+    return agendamento
+
+@router.delete("/{agendamento_id}")
+def delete_agendamento(
+    agendamento_id: int, 
+    db: Session = Depends(get_db),
+    current_cliente: Annotated[models.Cliente, Depends(get_current_active_cliente)] = None,
+    current_profissional: Annotated[models.Profissional, Depends(get_current_active_profissional)] = None
+):
     db_agendamento = crud.get_agendamento(db, agendamento_id=agendamento_id)
-    if db_agendamento is None:
+    if not db_agendamento:
         raise HTTPException(status_code=404, detail="Agendamento não encontrado")
-    return crud.update_agendamento(db=db, agendamento_id=agendamento_id, agendamento=agendamento)
-# Endpoint para deletar um agendamento
-@router.delete("/{agendamento_id}", status_code=status.HTTP_204_NO_CONTENT) # type: ignore
-def delete_agendamento(agendamento_id: int, db: Session = Depends(get_db)):
-    db_agendamento = crud.get_agendamento(db, agendamento_id=agendamento_id)
-    if db_agendamento is None:
-        raise HTTPException(status_code=404, detail="Agendamento não encontrado")
-    crud.delete_agendamento(db=db, agendamento_id=agendamento_id)
-    return {"detail": "Agendamento deletado com sucesso"}
+
+    # Autorização: Apenas o cliente ou o profissional do agendamento podem deletá-lo
+    if current_cliente and db_agendamento.cliente_id != current_cliente.id:
+        raise HTTPException(status_code=403, detail="Não autorizado a deletar este agendamento")
+    if current_profissional and db_agendamento.profissional_id != current_profissional.id:
+        raise HTTPException(status_code=403, detail="Não autorizado a deletar este agendamento")
+    
+    return crud.delete_agendamento(db=db, agendamento_id=agendamento_id)

@@ -58,7 +58,6 @@ class Profissional(ProfissionalBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-
 # --- Esquemas para Serviço ---
 class ServicoBase(BaseModel):
     nome: str = Field(..., min_length=2, max_length=100)
@@ -95,70 +94,73 @@ class ServicoDelete(BaseModel):
 
 # --- Esquemas para Cliente ---
 class ClienteBase(BaseModel):
-    nome: str
+    nome: str = Field(..., min_length=2, max_length=50)
     telefone: Optional[str] = None
-    email: Optional[EmailStr] = None
+    email: EmailStr
     
-    model_config = ConfigDict(from_attributes=True)
-
 class ClienteCreate(ClienteBase):
-    senha: str
-    pass
-
-class Cliente(ClienteBase):
-    id: int
-    criado_em: datetime
-    atualizado_em: datetime
+    senha: str = Field(..., min_length=6)
 
 class ClienteUpdate(ClienteBase):
+    nome: Optional[str] = None
+    telefone: Optional[str] = None
+    email: Optional[EmailStr] = None
     senha: Optional[str] = None
 
 class ClienteDelete(BaseModel):
     id: int
     message: str = "Cliente deletado com sucesso"
+    
+
+class Cliente(ClienteBase):
+    id: int
+    is_active: bool
+    criado_em: datetime
+    atualizado_em: datetime
+
+model_config = ConfigDict(from_attributes=True)
 
 
 # --- Esquemas para Agendamento ---
+# Este esquema representa um agendamento de serviço
 class AgendamentoBase(BaseModel):
-    salao_id: int
+    data_hora_inicio: datetime # Data e hora de início do agendamento
+    data_hora_fim: datetime # Data e hora de fim do agendamento
+    status: str = "agendado" # Pode ser 'agendado', 'concluido', 'cancelado'
+
+# Este esquema é usado para criar um novo agendamento
+class AgendamentoCreate(AgendamentoBase):
     cliente_id: int
     profissional_id: int
     servico_id: int
-    data_hora_inicio: datetime
-    data_hora_fim: datetime
-    status: Optional[str] = "agendado"
-    observacoes: Optional[str] = None
-    
-    model_config = ConfigDict(from_attributes=True)
 
-class AgendamentoCreate(AgendamentoBase):
-    pass
-
+# Este esquema representa um agendamento com detalhes adicionais
 class Agendamento(AgendamentoBase):
     id: int
-    criado_em: datetime
-    atualizado_em: datetime
-    
+    cliente: "Cliente" # Relacionamento aninhado com o schema Cliente
+    profissional: "Profissional" # Relacionamento aninhado com o schema Profissional
+    servico: "Servico" # Relacionamento aninhado com o schema Servico
+  
+ # Este esquema é usado para atualizar um agendamento existente   
 class AgendamentoUpdate(AgendamentoBase):
-    pass
-
+    cliente_id: Optional[int] = None
+    profissional_id: Optional[int] = None
+    servico_id: Optional[int] = None
+    status: Optional[str] = None
+    data_hora_inicio: Optional[datetime] = None
+    data_hora_fim: Optional[datetime] = None
+    is_active: Optional[bool] = None
+  
+# Este esquema é usado para deletar um agendamento  
 class AgendamentoDelete(BaseModel):
     id: int
     message: str = "Agendamento deletado com sucesso"
-    
-class AgendamentoList(BaseModel):
-    id: int
-    cliente_id: int
-    profissional_id: int
-    servico_id: int
-    data_hora_inicio: datetime
-    data_hora_fim: datetime
-    status: str
-    observacoes: Optional[str] = None
-    criado_em: datetime
-    atualizado_em: datetime
-
+        
     model_config = ConfigDict(from_attributes=True)
+    
+# Importe as classes aninhadas para evitar erros de referência circular
+from .schemas import Cliente, Profissional, Servico
+Agendamento.model_rebuild()
     
     
 # -- Schemas de Autenticação (ADICIONADOS) ---

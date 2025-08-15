@@ -207,133 +207,116 @@ def delete_servico(db: Session, servico_id: int):
     return {"message": "Serviço deletado com sucesso"}
 
 ############################### CLIENTES
-def get_cliente(db: Session, cliente_id: int):
-    return db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
 
-# Função para obter cliente por e-mail
-def get_clientes(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Cliente).offset(skip).limit(limit).all()
+# Funções para Clientes
+def get_cliente_by_email(db: Session, email: str):
+    return db.query(models.Cliente).filter(models.Cliente.email == email).first()
 
 # Função para criar cliente
 def create_cliente(db: Session, cliente: schemas.ClienteCreate):
-    senha = hash_password(cliente.senha)
+    senha_hash = get_password_hash(cliente.senha)
     db_cliente = models.Cliente(
         nome=cliente.nome,
         telefone=cliente.telefone,
-        email=cliente.email
+        email=cliente.email,
+        senha_hash=senha_hash
     )
     db.add(db_cliente)
     db.commit()
     db.refresh(db_cliente)
     return db_cliente
 
+# Funções CRUD para Cliente
+def get_cliente(db: Session, cliente_id: int):
+    return db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
+
+# Função para obter todos os clientes com paginação
+def get_clientes(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Cliente).offset(skip).limit(limit).all()
+
 # Função para atualizar cliente
 def update_cliente(db: Session, cliente_id: int, cliente: schemas.ClienteUpdate):
-    db_cliente = get_cliente(db, cliente_id)
+    db_cliente = get_cliente(db, cliente_id=cliente_id)
     if not db_cliente:
         return None
-    
-    if cliente.nome:
-        db_cliente.nome = cliente.nome
-    if cliente.telefone:
-        db_cliente.telefone = cliente.telefone
-    if cliente.email:
-        db_cliente.email = cliente.email
+        
+    update_data = cliente.model_dump(exclude_unset=True)
+    if "senha" in update_data:
+        db_cliente.senha_hash = get_password_hash(update_data["senha"])
+        del update_data["senha"]
+
+    for key, value in update_data.items():
+        setattr(db_cliente, key, value)
     
     db.commit()
     db.refresh(db_cliente)
     return db_cliente
 
-# Função para deletar cliente
+# Função para deletar cliente  
 def delete_cliente(db: Session, cliente_id: int):
-    db_cliente = get_cliente(db, cliente_id)
+    db_cliente = get_cliente(db, cliente_id=cliente_id)
     if not db_cliente:
         return None
     db.delete(db_cliente)
     db.commit()
-    return db_cliente
-
-# Função para obter cliente por e-mail (para verificação de duplicidade)
-def get_cliente_by_email(db: Session, email: str):
-    return db.query(models.Cliente).filter(models.Cliente.email == email).first()
+    return {"message": "Cliente deletado com sucesso"}
 
 
 ############################### AGENDAMENTOS
-
 # Funções CRUD para Agendamento
-def get_agendamento(db: Session, agendamento_id: int):
-    return db.query(models.Agendamento).filter(models.Agendamento.id == agendamento_id).first()
-def get_agendamentos(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Agendamento).offset(skip).limit(limit).all()
+
+# Função para verificar se o profissional está disponível
+def get_agendamentos_by_profissional_and_time(db: Session, profissional_id: int, data_hora_inicio: datetime, data_hora_fim: datetime):
+    return db.query(models.Agendamento).filter(
+        models.Agendamento.profissional_id == profissional_id,
+        models.Agendamento.data_hora_inicio < data_hora_fim,
+        models.Agendamento.data_hora_fim > data_hora_inicio
+    ).first()
+
+# Função para criar agendamento
 def create_agendamento(db: Session, agendamento: schemas.AgendamentoCreate):
+    # Lógica para verificar conflito de horário
+    conflito = get_agendamentos_by_profissional_and_time(
+        db, 
+        agendamento.profissional_id,
+        agendamento.data_hora_inicio,
+        agendamento.data_hora_fim
+    )
+    if conflito:
+        raise ValueError("Profissional não está disponível neste horário.")
+
     db_agendamento = models.Agendamento(
-        salao_id=agendamento.salao_id,
         cliente_id=agendamento.cliente_id,
         profissional_id=agendamento.profissional_id,
         servico_id=agendamento.servico_id,
         data_hora_inicio=agendamento.data_hora_inicio,
-        data_hora_fim=agendamento.data_hora_fim,
-        status=agendamento.status,
-        observacoes=agendamento.observacoes
+        data_hora_fim=agendamento.data_hora_fim
     )
     db.add(db_agendamento)
     db.commit()
     db.refresh(db_agendamento)
     return db_agendamento
-def update_agendamento(db: Session, agendamento_id: int, agendamento: schemas.AgendamentoUpdate):
-    db_agendamento = get_agendamento(db, agendamento_id)
-    if not db_agendamento:
-        return None
-    
-    if agendamento.profissional_id:
-        db_agendamento.profissional_id = agendamento.profissional_id
-    if agendamento.servico_id:
-        db_agendamento.servico_id = agendamento.servico_id
-    if agendamento.cliente_id:
-        db_agendamento.cliente_id = agendamento.cliente_id
-    if agendamento.data_hora_inicio:
-        db_agendamento.data_hora_inicio = agendamento.data_hora_inicio
-    if agendamento.data_hora_fim:
-        db_agendamento.data_hora_fim = agendamento.data_hora_fim
-    if agendamento.status:
-        db_agendamento.status = agendamento.status
-    if agendamento.observacoes:
-        db_agendamento.observacoes = agendamento.observacoes
-    
-    db.commit()
-    db.refresh(db_agendamento)
-    return db_agendamento
-# Função para deletar agendamento
+
+# Função para obter agendamento por ID
+def get_agendamento(db: Session, agendamento_id: int):
+    return db.query(models.Agendamento).filter(models.Agendamento.id == agendamento_id).first()
+
+# Função para obter todos os agendamentos com paginação
+def get_agendamentos_by_cliente(db: Session, cliente_id: int, skip: int = 0, limit: int = 100):
+    return db.query(models.Agendamento).filter(models.Agendamento.cliente_id == cliente_id).offset(skip).limit(limit).all()
+
+# Função para obter todos os agendamentos de um profissional com paginação
+def get_agendamentos_by_profissional(db: Session, profissional_id: int, skip: int = 0, limit: int = 100):
+    return db.query(models.Agendamento).filter(models.Agendamento.profissional_id == profissional_id).offset(skip).limit(limit).all()
+
+# Função para atualizar agendamento
 def delete_agendamento(db: Session, agendamento_id: int):
     db_agendamento = get_agendamento(db, agendamento_id)
     if not db_agendamento:
         return None
     db.delete(db_agendamento)
     db.commit()
-    return db_agendamento
-
-# Função para obter agendamentos conflitantes
-def get_agendamentos_conflitantes(
-    db: Session, profissional_id: int, data_hora_inicio: datetime, data_hora_fim: datetime
-):
-    # (DEBUG)
-    print(f"--- Buscando conflito ---")
-    print(f"Profissional ID: {profissional_id}")
-    print(f"Início: {data_hora_inicio}")
-    print(f"Fim: {data_hora_fim}")
-    """
-    Verifica se existe algum agendamento para o profissional
-    que se sobrepõe ao novo horário.
-    """
-    return (
-        db.query(models.Agendamento)
-        .filter(models.Agendamento.profissional_id == profissional_id)
-        .filter(
-            models.Agendamento.data_hora_inicio < data_hora_fim,
-            models.Agendamento.data_hora_fim > data_hora_inicio
-        )
-        .first()
-    )
+    return {"message": "Agendamento deletado com sucesso"}
 
 # ====================================================================
 # FUNÇÕES DE AUTENTICAÇÃO

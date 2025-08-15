@@ -50,7 +50,7 @@ def read_root():
 
 ######################### SALÕES #########################
 
-app.include_router(saloes.router, prefix="/saloes", tags=["saloes"])
+app.include_router(saloes.router)
 
 ######################### PROFISSIONAIS #########################
 app.include_router(profissionais.router) # type: ignore
@@ -59,10 +59,10 @@ app.include_router(profissionais.router) # type: ignore
 app.include_router(servicos.router) # type: ignore
 
 ######################### CLIENTES #########################
-app.include_router(clientes.router, prefix="/clientes", tags=["clientes"])
+app.include_router(clientes.router) # type: ignore
 
 ######################### AGENDAMENTOS #########################
-app.include_router(agendamentos.router, prefix="/agendamentos", tags=["agendamentos"])
+app.include_router(agendamentos.router)
 
 ########################## AUTENTICAÇÃO #########################
 app.include_router(auth.router, tags=["auth"]) # NOVO: Roteador de autenticação
