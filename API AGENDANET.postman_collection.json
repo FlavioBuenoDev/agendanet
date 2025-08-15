@@ -1,0 +1,577 @@
+{
+	"info": {
+		"_postman_id": "535e6b1c-ebc6-4fd1-87a0-fc6f4709e14c",
+		"name": "API AGENDANET",
+		"description": "# 🚀 Get started here\n\nThis collection guides you through CRUD operations (GET, POST, PUT, DELETE), variables, and tests.\n\n## 🔖 **How to use this collection**\n\n#### **Step 1: Send requests**\n\nRESTful APIs allow you to perform CRUD operations using the POST, GET, PUT, and DELETE HTTP methods.\n\nThis collection contains each of these request types. Open each request and click \"Send\" to see what happens.\n\n#### **Step 2: View responses**\n\nObserve the response tab for status code (200 OK), response time, and size.\n\n#### **Step 3: Send new Body data**\n\nUpdate or add new data in \"Body\" in the POST request. Typically, Body data is also used in PUT and PATCH requests.\n\n```\n{\n    \"name\": \"Add your name in the body\"\n}\n\n```\n\n#### **Step 4: Update the variable**\n\nVariables enable you to store and reuse values in Postman. We have created a variable called `base_url` with the sample request [https://postman-api-learner.glitch.me](https://postman-api-learner.glitch.me). Replace it with your API endpoint to customize this collection.\n\n#### **Step 5: Add tests in the \"Tests\" tab**\n\nTests help you confirm that your API is working as expected. You can write test scripts in JavaScript and view the output in the \"Test Results\" tab.\n\n<img src=\"https://content.pstmn.io/b5f280a7-4b09-48ec-857f-0a7ed99d7ef8/U2NyZWVuc2hvdCAyMDIzLTAzLTI3IGF0IDkuNDcuMjggUE0ucG5n\">\n\n## 💪 Pro tips\n\n- Use folders to group related requests and organize the collection.\n- Add more scripts in \"Tests\" to verify if the API works as expected and execute flows.\n    \n\n## ℹ️ Resources\n\n[Building requests](https://learning.postman.com/docs/sending-requests/requests/)  \n[Authorizing requests](https://learning.postman.com/docs/sending-requests/authorization/)  \n[Using variables](https://learning.postman.com/docs/sending-requests/variables/)  \n[Managing environments](https://learning.postman.com/docs/sending-requests/managing-environments/)  \n[Writing scripts](https://learning.postman.com/docs/writing-scripts/intro-to-scripts/)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "24311759",
+		"_collection_link": "https://planetary-spaceship-378466.postman.co/workspace/d6fc0767-4c7a-4756-8a94-9fa0ad9cf04d/collection/24311759-535e6b1c-ebc6-4fd1-87a0-fc6f4709e14c?action=share&source=collection_link&creator=24311759"
+	},
+	"item": [
+		{
+			"name": "Criar Salao",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"nome\": \"Salão Novo\",\r\n    \"endereco\": \"Rua Teste, 456\",\r\n    \"telefone\": \"98888-8888\",\r\n    \"email\": \"salao.novo@exemplo.com\",\r\n    \"senha\": \"senhaforte\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/saloes/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"saloes",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Token Saloes",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "username",
+							"value": "salao.novo@exemplo.com",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "senhaforte",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8000/saloes/token",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"saloes",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Consutar Saloes",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzYWxhby5ub3ZvQGV4ZW1wbG8uY29tIiwiZXhwIjoxNzU1MDAxMzQ3fQ.xg0Puaa0LzNTJ2ofhj-4Nw-Kl6Jstm52TQTsiL4ytaQ",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"nome\": \"Meu Salão\",\r\n  \"endereco\": \"Rua Principal, 123\",\r\n  \"telefone\": \"99999-9999\",\r\n  \"email\": \"meu.salao@exemplo.com\",\r\n  \"senha\": \"minhasenhaforte\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/saloes/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"saloes",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8000/saloes/me/",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzYWxhby5ub3ZvQGV4ZW1wbG8uY29tIiwiZXhwIjoxNzU1MjY0ODUyfQ.AOnibgekpPmdhS99Bcyy2JBS3tGYxgkngWu-t-6vWxE",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8000/saloes/me/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"saloes",
+						"me",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Criar  Profissional",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzYWxhby5ub3ZvQGV4ZW1wbG8uY29tIiwiZXhwIjoxNzU1MjgxNDk2fQ.MHCucXvaPKaWDOPpfg_o5I4v5AVty_8xkjznyu4ZBlE",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"nome\": \"João da Silva\",\r\n  \"especialidade\": \"Cabeleireiro\",\r\n  \"telefone\": \"9999-8888\",\r\n  \"email\": \"joao.silva@exemplo.com\",\r\n  \"senha\": \"senhaforte123\",\r\n  \"salao_id\": 1\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/profissionais/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"profissionais",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Criar Servicos",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzYWxhby5ub3ZvQGV4ZW1wbG8uY29tIiwiZXhwIjoxNzU1MjgxNDk2fQ.MHCucXvaPKaWDOPpfg_o5I4v5AVty_8xkjznyu4ZBlE",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"nome\": \"Corte de Cabelo\",\r\n  \"descricao\": \"Corte moderno masculino ou feminino\",\r\n  \"preco\": 50.00,\r\n  \"duracao_minutos\": 45,\r\n  \"salao_id\": 1\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/servicos/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"servicos",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Listar Todos os Serviços do Salão",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzYWxhby5ub3ZvQGV4ZW1wbG8uY29tIiwiZXhwIjoxNzU1MjY5NzM5fQ.X_P42mBN1MyoV2Uy-ooJbcsRTMdVdIolz9SnZq_OWbc",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8000/servicos/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"servicos",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Ver Detalhes de um Serviço Específico",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzYWxhby5ub3ZvQGV4ZW1wbG8uY29tIiwiZXhwIjoxNzU1MjY5NzM5fQ.X_P42mBN1MyoV2Uy-ooJbcsRTMdVdIolz9SnZq_OWbc",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8000/servicos/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"servicos",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Atualizar um Serviço",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzYWxhby5ub3ZvQGV4ZW1wbG8uY29tIiwiZXhwIjoxNzU1MjY5NzM5fQ.X_P42mBN1MyoV2Uy-ooJbcsRTMdVdIolz9SnZq_OWbc",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"preco\": 60.00\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/servicos/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"servicos",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Deletar um Serviço",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzYWxhby5ub3ZvQGV4ZW1wbG8uY29tIiwiZXhwIjoxNzU1MjY5NzM5fQ.X_P42mBN1MyoV2Uy-ooJbcsRTMdVdIolz9SnZq_OWbc",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"preco\": 60.00\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/servicos/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"servicos",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Criar Clientes",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"nome\": \"Ana Souza\",\r\n  \"telefone\": \"98765-4321\",\r\n  \"email\": \"ana.souza@cliente.com\",\r\n  \"senha\": \"senhaana123\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/clientes/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"clientes",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Token Cliente",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "username",
+							"value": "ana.souza@cliente.com",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "senhaana123",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8000/clientes/token/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"clientes",
+						"token",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login do Cliente e Obter Token",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "username",
+							"value": "ana.souza@cliente.com",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "senhaana123",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8000/clientes/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"clientes",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Ver Dados do Cliente Autenticado",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbmEuc291emFAY2xpZW50ZS5jb20iLCJleHAiOjE3NTUyODE2NjV9.nLM_5LIUA0jpUp750iLxv_BmEEmcQrNE-BxBE-UdEM0",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "username",
+							"value": "ana.souza@cliente.com",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "senhaana123",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8000/clientes/me/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"clientes",
+						"me",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Criar Agendamento",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhbmEuc291emFAY2xpZW50ZS5jb20iLCJleHAiOjE3NTUyODE2NjV9.nLM_5LIUA0jpUp750iLxv_BmEEmcQrNE-BxBE-UdEM0",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"cliente_id\": 1,\r\n  \"profissional_id\": 1,\r\n  \"servico_id\": 1,\r\n  \"data_hora_inicio\": \"2025-08-15T14:00:00\",\r\n  \"data_hora_fim\": \"2025-08-15T14:45:00\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/agendamentos/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"agendamentos",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "id",
+			"value": "1"
+		},
+		{
+			"key": "base_url",
+			"value": "https://postman-rest-api-learner.glitch.me/"
+		}
+	]
+}
