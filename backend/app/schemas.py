@@ -1,7 +1,8 @@
 # backend/app/schemas.py
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, Field, condecimal
 from typing import Optional
 from datetime import datetime
+from pydantic import BaseModel, EmailStr, Field
 
 # --- Esquemas para Salão ---
 class SalaoBase(BaseModel):
@@ -30,7 +31,7 @@ class SalaoDelete(BaseModel):
 
 # --- Esquemas para Profissional ---
 class ProfissionalBase(BaseModel):
-    nome: str
+    nome: str = Field(..., min_length=2, max_length=50)
     especialidade: Optional[str] = None
     telefone: Optional[str] = None
     email: Optional[EmailStr] = None
@@ -38,7 +39,7 @@ class ProfissionalBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
 class ProfissionalCreate(ProfissionalBase):
-    hashed_password: str
+    senha: str = Field(..., min_length=6)
     salao_id: int
     
 class ProfissionalUpdate(ProfissionalBase):
@@ -53,34 +54,43 @@ class Profissional(ProfissionalBase):
     salao_id: int
     criado_em: datetime
     atualizado_em: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 
 # --- Esquemas para Serviço ---
 class ServicoBase(BaseModel):
-    nome: str
+    nome: str = Field(..., min_length=2, max_length=100)
     descricao: Optional[str] = None
-    duracao_minutos: int
-    preco: float
+    preco: condecimal(max_digits=10, decimal_places=2) = Field(..., ge=0) # type: ignore # Preço com 2 casas decimais e >= 0
+    duracao_minutos: int = Field(..., gt=0, description="Duração do serviço em minutos")# Duração em minutos > 0
     
     model_config = ConfigDict(from_attributes=True)
 
 class ServicoCreate(ServicoBase):
     salao_id: int
     
+class ServicoUpdate(ServicoBase):
+    nome: Optional[str] = None
+    descricao: Optional[str] = None
+    preco: Optional[condecimal(max_digits=10, decimal_places=2)] = None # type: ignore
+    duracao_minutos: Optional[int] = None
+    is_active: Optional[bool] = None
+    
 class Servico(ServicoBase):
     id: int
     salao_id: int
     criado_em: datetime
     atualizado_em: datetime
+    is_active: bool
     
-class ServicoUpdate(ServicoBase):
-    pass
+    model_config = ConfigDict(from_attributes=True) # type: ignore 
+
 
 class ServicoDelete(BaseModel):
     id: int
     message: str = "Serviço deletado com sucesso"
-
 
 
 # --- Esquemas para Cliente ---

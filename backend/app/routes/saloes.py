@@ -2,10 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session  # type: ignore
 from typing import List
 
-from app import schemas, crud
+from app import schemas, crud, models
+from .auth import get_current_active_salao
 from app.database import get_db
 
 router = APIRouter()
+
+# Endpoint para obter informações do salão autenticado
+@router.get("/me/", response_model=schemas.Salao)
+def read_salao_me(current_salao: models.Salao = Depends(get_current_active_salao)):
+    return current_salao
 
 # Endpoint para criar um salão
 @router.post("/", response_model=schemas.Salao, status_code=status.HTTP_201_CREATED) # type: ignore

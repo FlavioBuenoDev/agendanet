@@ -10,7 +10,7 @@ from sqlalchemy import create_engine # type: ignore
 from sqlalchemy.orm import sessionmaker, Session # type: ignore
 from contextlib import contextmanager
 from .database import Base, get_db
-from .routes import saloes, profissionais, servicos, clientes, agendamentos, auth
+from .routes import profissionais, saloes, servicos, clientes, agendamentos, auth
 
 from .database import get_db
 from . import models, schemas, crud # Importação do crud e os schemas
@@ -53,11 +53,10 @@ def read_root():
 app.include_router(saloes.router, prefix="/saloes", tags=["saloes"])
 
 ######################### PROFISSIONAIS #########################
-
-app.include_router(profissionais.router, prefix="/profissionais", tags=["profissionais"])
+app.include_router(profissionais.router) # type: ignore
 
 ######################### SERVIÇOS #########################
-app.include_router(servicos.router, prefix="/servicos", tags=["servicos"])
+app.include_router(servicos.router) # type: ignore
 
 ######################### CLIENTES #########################
 app.include_router(clientes.router, prefix="/clientes", tags=["clientes"])

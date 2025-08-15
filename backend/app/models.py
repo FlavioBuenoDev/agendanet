@@ -7,10 +7,9 @@ from sqlalchemy.orm import relationship # Importe para definir relacionamentos e
 # backend/app/models.py
 #from sqlalchemy.ext.declarative import declarative_base # type: ignore # NOVO: Importe aqui
 from sqlalchemy.orm import declarative_base # type: ignore
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text # type: ignore
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text # type: ignore
 from sqlalchemy.orm import relationship # type: ignore
 from sqlalchemy.sql import func # type: ignore # Para datas automáticas
-
 
 from datetime import datetime
 
@@ -43,10 +42,11 @@ class Profissional(Base):
     nome = Column(String(255), nullable=False)
     especialidade = Column(String(100))
     telefone = Column(String(20))
-    email = Column(String(255))
+    email = Column(String(255), unique=True, index=True) # Email único
     criado_em = Column(DateTime, default=datetime.now)
     atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     senha_hash = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True)
 
     salao = relationship("Salao", back_populates="profissionais") # Relacionamento de volta para o Salão
     agendamentos = relationship("Agendamento", back_populates="profissional")
@@ -57,6 +57,7 @@ class Profissional(Base):
 # Exemplo para Servico:
 class Servico(Base):
     __tablename__ = "servicos"
+    
     id = Column(Integer, primary_key=True, index=True)
     salao_id = Column(Integer, ForeignKey("saloes.id"), nullable=False)
     nome = Column(String(255), nullable=False)
@@ -65,6 +66,7 @@ class Servico(Base):
     preco = Column(DECIMAL(10, 2), nullable=False)
     criado_em = Column(DateTime, default=datetime.now)
     atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    is_active=True # type: ignore
 
     salao = relationship("Salao", back_populates="servicos")
     agendamentos = relationship("Agendamento", back_populates="servico") # Já pensando no relacionamento com Agendamento

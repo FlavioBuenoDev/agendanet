@@ -118,33 +118,36 @@ def get_profissionais(db: Session, skip: int = 0, limit: int = 100):
 
 # Função para criar profissional
 def create_profissional(db: Session, profissional: schemas.ProfissionalCreate):
-    senha = hash_password(profissional.senha)
+    senha_hash = hash_password(profissional.senha)  
+    
     db_profissional = models.Profissional(
         salao_id=profissional.salao_id,
         nome=profissional.nome,
         especialidade=profissional.especialidade,
         telefone=profissional.telefone,
-        email=profissional.email
+        email=profissional.email,
+        senha_hash=senha_hash
     )
     db.add(db_profissional)
     db.commit()
     db.refresh(db_profissional)
     return db_profissional
 
+# Função para atualizar profissional
 def update_profissional(db: Session, profissional_id: int, profissional: schemas.ProfissionalUpdate):
     db_profissional = get_profissional(db, profissional_id)
     if not db_profissional:
         return None
     
-    if profissional.nome:
-        db_profissional.nome = profissional.nome
-    if profissional.especialidade:
-        db_profissional.especialidade = profissional.especialidade
-    if profissional.telefone:
-        db_profissional.telefone = profissional.telefone
-    if profissional.email:
-        db_profissional.email = profissional.email
+    update_data = profissional.model_dump(exclude_unset=True)
     
+    if "senha" in update_data:
+        db_profissional.senha_hash = hash_password(profissional.senha)
+        del update_data["senha"]  # Remove senha do update_data
+        
+    for key, value in update_data.items():
+        setattr(db_profissional, key, value)
+        
     db.commit()
     db.refresh(db_profissional)
     return db_profissional
@@ -155,49 +158,53 @@ def delete_profissional(db: Session, profissional_id: int):
         return None
     db.delete(db_profissional)
     db.commit()
-    return db_profissional
+    return {"message": "Profissional deletado com sucesso"}
 
 ############################### SERVIÇOS
-def get_servico(db: Session, servico_id: int):
-    return db.query(models.Servico).filter(models.Servico.id == servico_id).first()
-def get_servicos(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Servico).offset(skip).limit(limit).all()
+# Funções CRUD para Serviço
 def create_servico(db: Session, servico: schemas.ServicoCreate):
     db_servico = models.Servico(
-        salao_id=servico.salao_id,
         nome=servico.nome,
         descricao=servico.descricao,
+        preco=servico.preco,
         duracao_minutos=servico.duracao_minutos,
-        preco=servico.preco
+        salao_id=servico.salao_id
     )
     db.add(db_servico)
     db.commit()
     db.refresh(db_servico)
     return db_servico
+
+# Funções CRUD para Serviço
+def get_servico(db: Session, servico_id: int):
+    return db.query(models.Servico).filter(models.Servico.id == servico_id).first()
+#  Função para obter todos os serviços de um salão
+def get_servicos_by_salao(db: Session, salao_id: int, skip: int = 0, limit: int = 100):
+    return db.query(models.Servico).filter(models.Servico.salao_id == salao_id).offset(skip).limit(limit).all()
+
+# Função para obter todos os serviços
 def update_servico(db: Session, servico_id: int, servico: schemas.ServicoUpdate):
-    db_servico = get_servico(db, servico_id)
-    if not db_servico:
+    db_servico = get_servico(db, servico_id=servico_id)
+    if db_servico is None:
         return None
-    
-    if servico.nome:
-        db_servico.nome = servico.nome
-    if servico.descricao:
-        db_servico.descricao = servico.descricao
-    if servico.duracao_minutos:
-        db_servico.duracao_minutos = servico.duracao_minutos
-    if servico.preco:
-        db_servico.preco = servico.preco
+        
+    update_data = servico.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_servico, key, value)
     
     db.commit()
     db.refresh(db_servico)
     return db_servico
+   
+# Função para deletar serviço 
 def delete_servico(db: Session, servico_id: int):
-    db_servico = get_servico(db, servico_id)
-    if not db_servico:
+    db_servico = get_servico(db, servico_id=servico_id)
+    if db_servico is None:
         return None
+    
     db.delete(db_servico)
     db.commit()
-    return db_servico
+    return {"message": "Serviço deletado com sucesso"}
 
 ############################### CLIENTES
 def get_cliente(db: Session, cliente_id: int):

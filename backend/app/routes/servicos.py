@@ -1,45 +1,72 @@
+# app/routes/servicos.py
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session  # type: ignore
-from typing import List # type: ignore
-from app import schemas, crud
+from sqlalchemy.orm import Session # type: ignore
+from typing import List
+
+from app import schemas, crud, models
 from app.database import get_db
+from .auth import get_current_active_salao
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/servicos",
+    tags=["Serviços"]
+)
 
-# Endpoint para criar um serviço
-@router.post("/", response_model=schemas.Servico, status_code=status.HTTP_201_CREATED) # type: ignore
-def create_servico(servico: schemas.ServicoCreate, db: Session = Depends(get_db)):
+@router.post("/", response_model=schemas.Servico, status_code=status.HTTP_201_CREATED)
+def create_servico_for_salao(
+    servico: schemas.ServicoCreate,
+    db: Session = Depends(get_db),
+    current_salao: models.Salao = Depends(get_current_active_salao)
+):
+    if servico.salao_id != current_salao.id:
+        raise HTTPException(status_code=403, detail="Não autorizado a criar serviços para este salão")
+        
     return crud.create_servico(db=db, servico=servico)
 
-# Endpoint para listar serviços
-@router.get("/", response_model=List[schemas.Servico]) # type: ignore
-def read_servicos(skip: int = 0, limit: int = 100, db
-: Session = Depends(get_db)):
-    servicos = crud.get_servicos(db, skip=skip, limit=limit)
+@router.get("/", response_model=List[schemas.Servico])
+def read_servicos(
+    skip: int = 0, 
+    limit: int = 100, 
+    db: Session = Depends(get_db),
+    current_salao: models.Salao = Depends(get_current_active_salao)
+):
+    servicos = crud.get_servicos_by_salao(db, salao_id=current_salao.id, skip=skip, limit=limit)
     return servicos
 
-# Endpoint para obter um serviço por ID
-@router.get("/{servico_id}", response_model=schemas.Servico) 
-def read_servico(servico_id: int, db: Session = Depends(get_db)):
+@router.get("/{servico_id}", response_model=schemas.Servico)
+def read_servico(
+    servico_id: int, 
+    db: Session = Depends(get_db),
+    current_salao: models.Salao = Depends(get_current_active_salao)
+):
     db_servico = crud.get_servico(db, servico_id=servico_id)
-    if db_servico is None:
+    if db_servico is None or db_servico.salao_id != current_salao.id:
         raise HTTPException(status_code=404, detail="Serviço não encontrado")
     return db_servico
 
-# Endpoint para atualizar um serviço
-@router.put("/{servico_id}", response_model=schemas.Servico) # type: ignore
-def update_servico(servico_id: int, servico: schemas.ServicoUpdate, db
-: Session = Depends(get_db)):
+@router.put("/{servico_id}", response_model=schemas.Servico)
+def update_servico(
+    servico_id: int, 
+    servico: schemas.ServicoUpdate,
+    db: Session = Depends(get_db),
+    current_salao: models.Salao = Depends(get_current_active_salao)
+):
     db_servico = crud.get_servico(db, servico_id=servico_id)
-    if db_servico is None:
+    if db_servico is None or db_servico.salao_id != current_salao.id:
         raise HTTPException(status_code=404, detail="Serviço não encontrado")
+        
     return crud.update_servico(db=db, servico_id=servico_id, servico=servico)
-
-# Endpoint para deletar um serviço
-@router.delete("/{servico_id}", status_code=status.HTTP_204_NO_CONTENT)   # type: ignore
-def delete_servico(servico_id: int, db: Session = Depends(get_db)):
+    
+@router.delete("/{servico_id}")
+def delete_servico(
+    servico_id: int, 
+    db: Session = Depends(get_db),
+    current_salao: models.Salao = Depends(get_current_active_salao)
+):
     db_servico = crud.get_servico(db, servico_id=servico_id)
-    if db_servico is None:
+    if db_servico is None or db_servico.salao_id != current_salao.id:
         raise HTTPException(status_code=404, detail="Serviço não encontrado")
+        
     crud.delete_servico(db=db, servico_id=servico_id)
-    return {"detail": "Serviço deletado com sucesso"}
+    return {"message": "Serviço deletado com sucesso"}
