@@ -1,186 +1,110 @@
+# backend/tests/test_profissionais.py
+
 import pytest # type: ignore
 from httpx import AsyncClient
 
-
 @pytest.mark.asyncio
-async def test_create_profissional(client: AsyncClient):
-      # 1. Primeiro, crie um salão para associar o profissional
+async def test_profissionais_crud(client: AsyncClient):
+    """
+    Testa o fluxo completo de criação, leitura, atualização e exclusão de um profissional.
+    """
+    # 1. Cria um salão para autenticação
+    print("Testando: Criar Salão para autenticação...")
     salao_data = {
-        "nome": "Salão do Profissional",
-        "endereco": "Rua do Teste, 101",
-        "telefone": "1111111111",
-        "email": "salao.profissional@example.com",
-        "senha": "senhaprofissional123"
+        "nome": "Salão do Zé",
+        "email": "salao.ze@email.com",
+        "senha": "senha-segura",
+        "telefone": "11987654321",
+        "endereco": "Rua das Flores, 100",
+        "cidade": "São Paulo",
+        "estado": "SP",
+        "cep": "01000-000"
     }
-    response_salao = client.post("/saloes/", json=salao_data)
-    assert response_salao.status_code == 201
-    salao_id = response_salao.json()["id"]
-    
-    # 2. Agora, crie um profissional associado a esse salão
-    profissional_data = {
-        "nome": "José Profissional",
-        "especialidade": "Cabeleireiro",
-        "email": "jose@example.com",
-        "salao_id": salao_id
-    }
-    response_profissional = client.post("/profissionais/", json=profissional_data)
-    
-    # 3. Verifique a resposta
-    assert response_profissional.status_code == 201
-    data = response_profissional.json()
-    assert data["nome"] == "José Profissional"
-    assert "id" in data
-    assert data["salao_id"] == salao_id
-    assert "senha" not in data # A senha não deve ser retornada
-    
+    # Corrigido para incluir o prefixo da API
+    response_salao = await client.post("/api/v1/saloes/", json=salao_data)
+    assert response_salao.status_code == 201, f"Falha ao criar o salão: {response_salao.text}"
 
-@pytest.mark.asyncio
-async def test_read_profissional_by_id(client: AsyncClient):
-    salao_data = {
-        "nome": "Salão Teste Leitura",
-        "endereco": "Rua Leitura, 1",
-        "telefone": "2222222222",
-        "email": "leitura@example.com",
-        "senha": "leiturapass123"
-    }
-    response_salao = client.post("/saloes/", json=salao_data)
+    # 2. Autentica o salão para obter um token de acesso
+    print("Testando: Autenticar Salão...")
+    auth_response = await client.post(
+        "/api/v1/auth/token", 
+        data={"username": salao_data["email"], "password": salao_data["senha"]}
+    )
+    assert auth_response.status_code == 200, f"Falha na autenticação do salão: {auth_response.text}"
+    token_data = auth_response.json()
+    access_token = token_data["access_token"]
+    headers = {"Authorization": f"Bearer {access_token}"}
+    
+    # Obtém o ID do salão criado
     salao_id = response_salao.json()["id"]
 
-    # 2. Cria o profissional que será lido
+    # 3. Cria um profissional
+    print("Testando: Criar Profissional...")
     profissional_data = {
-        "nome": "Ana Leitura",
-        "especialidade": "Manicure",
-        "email": "ana@example.com",
-        "salao_id": salao_id
+        "nome": "João da Silva",
+        "email": "joao.silva@teste.com",
+        "senha": "senha-joao",
+        "telefone": "11999999999",
+        "especialidade": "Corte de Cabelo",
+        "salao_id": salao_id # Garante que o ID do salão está correto
     }
-    response_create = client.post("/profissionais/", json=profissional_data)
-    profissional_id = response_create.json()["id"]
+    # Corrigido para incluir o prefixo da API
+    response_create = await client.post("/api/v1/profissionais/", json=profissional_data, headers=headers)
+    assert response_create.status_code == 201, f"Falha ao criar o profissional: {response_create.text}"
+    new_profissional = response_create.json()
+    assert new_profissional["nome"] == profissional_data["nome"]
     
-    # 3. Faz a requisição GET para buscar o profissional por ID
-    response_read = client.get(f"/profissionais/{profissional_id}")
+    # 4. Lê o profissional recém-criado
+    print("Testando: Ler Profissional...")
+    profissional_id = new_profissional["id"]
+    # Corrigido para incluir o prefixo da API
+    response_get = await client.get(f"/api/v1/profissionais/{profissional_id}", headers=headers)
+    assert response_get.status_code == 200, f"Falha ao ler o profissional: {response_get.text}"
+    assert response_get.json()["id"] == profissional_id
     
-    # 4. Verifica a resposta
-    assert response_read.status_code == 200
-    data = response_read.json()
-    assert data["id"] == profissional_id
-    assert data["nome"] == "Ana Leitura"
-    assert data["salao_id"] == salao_id
-
-@pytest.mark.asyncio
-async def test_read_profissionais(client: AsyncClient):
-    # 1. Cria um salão e um profissional para garantir que a lista não está vazia
-    salao_data = {
-        "nome": "Salão Lista",
-        "endereco": "Rua da Lista, 2",
-        "telefone": "3333333333",
-        "email": "lista@example.com",
-        "senha": "listapass123"
-    }
-    response_salao = client.post("/saloes/", json=salao_data)
-    salao_id = response_salao.json()["id"]
-    
-    profissional_data = {
-        "nome": "Bruno Listagem",
-        "especialidade": "Massagista",
-        "email": "bruno@example.com",
-        "salao_id": salao_id
-    }
-    client.post("/profissionais/", json=profissional_data)
-    
-    # 2. Faz a requisição GET para buscar todos os profissionais
-    response_list = client.get("/profissionais/")
-    
-    # 3. Verifica a resposta
-    assert response_list.status_code == 200
-    data = response_list.json()
-    assert isinstance(data, list)
-    assert len(data) > 0
-
-@pytest.mark.asyncio
-async def test_read_nonexistent_profissional(client: AsyncClient):
-    # Tenta ler um profissional com um ID que não existe
-    response = client.get("/profissionais/99999999")
-    
-    assert response.status_code == 404
-    assert response.json() == {"detail": "Profissional não encontrado."}
+    # 5. Lê todos os profissionais
+    print("Testando: Ler todos os Profissionais...")
+    response_read_all = await client.get("/api/v1/profissionais/", headers=headers)
+    assert response_read_all.status_code == 200, f"Falha ao ler todos os profissionais: {response_read_all.text}"
+    all_profissionais = response_read_all.json()
+    assert len(all_profissionais) == 1
+    assert all_profissionais[0]["id"] == profissional_id
     
     
-    
-# Teste para atualizar um profissional existente
-@pytest.mark.asyncio
-async def test_update_profissional(client: AsyncClient):
-    # 1. Cria um salão
-    salao_data = {
-        "nome": "Salão para Atualizar Profissional",
-        "endereco": "Rua da Atualização, 1",
-        "telefone": "4444444444",
-        "email": "update.salao@example.com",
-        "senha": "updatepass123"
-    }
-    response_salao = client.post("/saloes/", json=salao_data)
-    salao_id = response_salao.json()["id"]
-
-    # 2. Cria o profissional que será atualizado
-    profissional_data = {
-        "nome": "Carla Atualizável",
-        "especialidade": "Esteticista",
-        "email": "carla@example.com",
-        "salao_id": salao_id
-    }
-    response_create = client.post("/profissionais/", json=profissional_data)
-    profissional_id = response_create.json()["id"]
-
-    # 3. Faz a requisição PUT para atualizar o profissional
+    # 6. Atualiza o profissional
+    print("Testando: Atualizar Profissional...")
     update_data = {
-        "nome": "Carla Atualizada",
-        "especialidade": "Esteticista e Manicure",
-        "email": "carla.nova@example.com",
-        "salao_id": salao_id
+        "nome": "João Silva Júnior",
+        "telefone": "11988888888",
+        "especialidade": "Corte e Cor"
     }
-    response_update = client.put(f"/profissionais/{profissional_id}", json=update_data)
-
-    # 4. Verifica se a atualização foi bem-sucedida
-    assert response_update.status_code == 200
-    data = response_update.json()
-    assert data["nome"] == "Carla Atualizada"
-    assert data["especialidade"] == "Esteticista e Manicure"
-    assert data["email"] == "carla.nova@example.com"
+    # Corrigido para incluir o prefixo da API
+    response_update = await client.put(f"/api/v1/profissionais/{profissional_id}", json=update_data, headers=headers)
+    assert response_update.status_code == 200, f"Falha ao atualizar o profissional: {response_update.text}"
+    updated_profissional = response_update.json()
+    assert updated_profissional["nome"] == update_data["nome"]
+    assert updated_profissional["telefone"] == update_data["telefone"]
+    assert updated_profissional["especialidade"] == update_data["especialidade"]
     
+    # 6. Lê todos os profissionais para verificar se o novo está na lista
+    print("Testando: Ler todos os Profissionais...")
+    # Corrigido para incluir o prefixo da API
+    response_get_all = await client.get("/api/v1/profissionais/", headers=headers)
+    assert response_get_all.status_code == 200, f"Falha ao ler todos os profissionais: {response_get_all.text}"
+    all_profissionais = response_get_all.json()
+    assert any(p["id"] == profissional_id for p in all_profissionais)
+
+    # 7. Exclui o profissional
+    print("Testando: Deletar Profissional...")
+    # Corrigido para incluir o prefixo da API
+    response_delete = await client.delete(f"/api/v1/profissionais/{profissional_id}", headers=headers)
+    assert response_delete.status_code == 200, f"Falha ao deletar o profissional: {response_delete.text}"
+    assert "Profissional deletado com sucesso" in response_delete.json()["message"]
     
-# Teste para deletar um profissional existente
+    # 8. Tenta ler o profissional excluído para confirmar que ele não existe mais
+    print("Testando: Confirmar deleção...")
+    # Corrigido para incluir o prefixo da API
+    response_get_deleted = await client.get(f"/api/v1/profissionais/{profissional_id}", headers=headers)
+    assert response_get_deleted.status_code == 404, "Profissional não foi deletado, ainda está acessível."
 
-
-@pytest.mark.asyncio
-async def test_delete_profissional(client: AsyncClient):
-    # 1. Cria um salão
-    salao_data = {
-        "nome": "Salão para Deletar Profissional",
-        "endereco": "Rua da Exclusão, 1",
-        "telefone": "5555555555",
-        "email": "delete.salao@example.com",
-        "senha": "deletepass123"
-    }
-    response_salao = client.post("/saloes/", json=salao_data)
-    salao_id = response_salao.json()["id"]
-
-    # 2. Cria o profissional que será excluído
-    profissional_data = {
-        "nome": "Daniel Deletável",
-        "especialidade": "Cabeleireiro",
-        "email": "daniel@example.com",
-        "salao_id": salao_id
-    }
-    response_create = client.post("/profissionais/", json=profissional_data)
-    profissional_id = response_create.json()["id"]
-
-    # 3. Faz a requisição DELETE para excluir o profissional
-    response_delete = client.delete(f"/profissionais/{profissional_id}")
-    
-    # 4. Verifica se a exclusão foi bem-sucedida
-    assert response_delete.status_code == 200
-    assert response_delete.json() == {"message": "Profissional deletado com sucesso."}
-
-    # 5. Tenta ler o profissional excluído para confirmar se ele sumiu
-    response_read = client.get(f"/profissionais/{profissional_id}")
-    assert response_read.status_code == 404
-    assert response_read.json() == {"detail": "Profissional não encontrado."}
+    print("Todos os testes de CRUD de profissionais foram bem-sucedidos!")

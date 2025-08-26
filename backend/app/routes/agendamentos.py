@@ -13,7 +13,7 @@ router = APIRouter(
     tags=["Agendamentos"]
 )
 
-@router.post("/", response_model=schemas.Agendamento, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=schemas.AgendamentoRead, status_code=status.HTTP_201_CREATED)
 def create_agendamento(
     agendamento: schemas.AgendamentoCreate,
     db: Session = Depends(get_db),
@@ -27,7 +27,7 @@ def create_agendamento(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/me/", response_model=List[schemas.Agendamento])
+@router.get("/me/", response_model=List[schemas.AgendamentoRead])
 def read_agendamentos_cliente(
     db: Session = Depends(get_db),
     current_cliente: Annotated[models.Cliente, Depends(get_current_active_cliente)] = None
@@ -35,7 +35,7 @@ def read_agendamentos_cliente(
     agendamentos = crud.get_agendamentos_by_cliente(db, cliente_id=current_cliente.id)
     return agendamentos
     
-@router.get("/profissional/", response_model=List[schemas.Agendamento])
+@router.get("/profissional/", response_model=List[schemas.AgendamentoRead])
 def read_agendamentos_profissional(
     db: Session = Depends(get_db),
     current_profissional: Annotated[models.Profissional, Depends(get_current_active_profissional)] = None
@@ -43,7 +43,7 @@ def read_agendamentos_profissional(
     agendamentos = crud.get_agendamentos_by_profissional(db, profissional_id=current_profissional.id)
     return agendamentos
 
-@router.get("/{agendamento_id}", response_model=schemas.Agendamento)
+@router.get("/{agendamento_id}", response_model=schemas.AgendamentoRead)
 def read_agendamento(
     agendamento_id: int, 
     db: Session = Depends(get_db)

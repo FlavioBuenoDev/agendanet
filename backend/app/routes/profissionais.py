@@ -1,76 +1,132 @@
-# app/routes/profissionais.py
+# backend/app/routes/profissionais.py
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session # type: ignore
 from typing import List
 
-from app import schemas, crud, models
 from app.database import get_db
-from .auth import get_current_active_salao
+from app.models.profissional import Profissional as ProfissionalModel
+from app.schemas.profissional import ProfissionalCreate, ProfissionalRead, ProfissionalUpdate
+from app.core.security import get_password_hash
+from app.dependencies import get_current_salao
 
 router = APIRouter(
     prefix="/profissionais",
-    tags=["Profissionais"]
+    tags=["profissionais"],
 )
 
-@router.post("/", response_model=schemas.Profissional, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=ProfissionalRead,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_profissional(
-    profissional: schemas.ProfissionalCreate,
+    profissional: ProfissionalCreate,
     db: Session = Depends(get_db),
-    current_salao: models.Salao = Depends(get_current_active_salao)
+    current_salao: dict = Depends(get_current_salao),
 ):
-    if profissional.salao_id != current_salao.id:
-        raise HTTPException(status_code=403, detail="Não autorizado a criar profissionais para este salão")
-
-    db_profissional = crud.get_profissional_by_email(db, email=profissional.email)
+    """
+    Cria um novo profissional para um salão.
+    """
+    # Verifica se o email já existe
+    db_profissional = db.query(ProfissionalModel).filter(ProfissionalModel.email == profissional.email).first()
     if db_profissional:
-        raise HTTPException(status_code=400, detail="Email já cadastrado")
-        
-    return crud.create_profissional(db=db, profissional=profissional)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email já registrado."
+        )
 
-@router.get("/", response_model=List[schemas.Profissional])
+    # Hash da senha antes de salvar
+    hashed_password = get_password_hash(profissional.senha)
+    
+    # Cria a instância do modelo
+    db_profissional = ProfissionalModel(
+        nome=profissional.nome,
+        email=profissional.email,
+        senha_hash=hashed_password,
+        telefone=profissional.telefone,
+        especialidade=profissional.especialidade,
+        salao_id=current_salao.id, # Associa o profissional ao salão logado
+    )
+    
+    db.add(db_profissional)
+    db.commit()
+    db.refresh(db_profissional)
+    return db_profissional
+
+@router.get("/", response_model=List[ProfissionalRead])
 def read_profissionais(
-    skip: int = 0, 
-    limit: int = 100, 
+    skip: int = 0,
+    limit: int = 100,
     db: Session = Depends(get_db),
-    current_salao: models.Salao = Depends(get_current_active_salao)
+    current_salao: dict = Depends(get_current_salao),
 ):
-    profissionais = crud.get_profissionais_by_salao(db, salao_id=current_salao.id, skip=skip, limit=limit)
+    """
+    Lista todos os profissionais de um salão.
+    """
+    profissionais = db.query(ProfissionalModel).filter(ProfissionalModel.salao_id == current_salao.id).offset(skip).limit(limit).all()
     return profissionais
 
-@router.get("/{profissional_id}", response_model=schemas.Profissional)
+@router.get("/{profissional_id}", response_model=ProfissionalRead)
 def read_profissional(
-    profissional_id: int, 
+    profissional_id: int,
     db: Session = Depends(get_db),
-    current_salao: models.Salao = Depends(get_current_active_salao)
+    current_salao: dict = Depends(get_current_salao),
 ):
-    db_profissional = crud.get_profissional(db, profissional_id=profissional_id)
-    if db_profissional is None or db_profissional.salao_id != current_salao.id:
+    """
+    Obtém um profissional por ID, verificando se pertence ao salão logado.
+    """
+    db_profissional = db.query(ProfissionalModel).filter(
+        ProfissionalModel.id == profissional_id,
+        ProfissionalModel.salao_id == current_salao.id
+    ).first()
+    if db_profissional is None:
         raise HTTPException(status_code=404, detail="Profissional não encontrado")
     return db_profissional
 
-@router.put("/{profissional_id}", response_model=schemas.Profissional)
+@router.put("/{profissional_id}", response_model=ProfissionalRead)
 def update_profissional(
-    profissional_id: int, 
-    profissional: schemas.ProfissionalUpdate,
+    profissional_id: int,
+    profissional: ProfissionalUpdate,
     db: Session = Depends(get_db),
-    current_salao: models.Salao = Depends(get_current_active_salao)
+    current_salao: dict = Depends(get_current_salao),
 ):
-    db_profissional = crud.get_profissional(db, profissional_id=profissional_id)
-    if db_profissional is None or db_profissional.salao_id != current_salao.id:
+    """
+    Atualiza um profissional por ID, verificando se pertence ao salão logado.
+    """
+    db_profissional = db.query(ProfissionalModel).filter(
+        ProfissionalModel.id == profissional_id,
+        ProfissionalModel.salao_id == current_salao.id
+    ).first()
+    if db_profissional is None:
         raise HTTPException(status_code=404, detail="Profissional não encontrado")
-        
-    return crud.update_profissional(db=db, profissional_id=profissional_id, profissional=profissional)
+
+    for key, value in profissional.model_dump(exclude_unset=True).items():
+        if key == "senha":
+            setattr(db_profissional, "senha_hash", get_password_hash(value))
+        else:
+            setattr(db_profissional, key, value)
     
-@router.delete("/{profissional_id}")
+    db.commit()
+    db.refresh(db_profissional)
+    return db_profissional
+
+@router.delete("/{profissional_id}", response_model=dict)
 def delete_profissional(
-    profissional_id: int, 
+    profissional_id: int,
     db: Session = Depends(get_db),
-    current_salao: models.Salao = Depends(get_current_active_salao)
+    current_salao: dict = Depends(get_current_salao),
 ):
-    db_profissional = crud.get_profissional(db, profissional_id=profissional_id)
-    if db_profissional is None or db_profissional.salao_id != current_salao.id:
+    """
+    Deleta um profissional por ID, verificando se pertence ao salão logado.
+    """
+    db_profissional = db.query(ProfissionalModel).filter(
+        ProfissionalModel.id == profissional_id,
+        ProfissionalModel.salao_id == current_salao.id
+    ).first()
+    if db_profissional is None:
         raise HTTPException(status_code=404, detail="Profissional não encontrado")
-        
-    crud.delete_profissional(db=db, profissional_id=profissional_id)
+
+    db.delete(db_profissional)
+    db.commit()
     return {"message": "Profissional deletado com sucesso"}

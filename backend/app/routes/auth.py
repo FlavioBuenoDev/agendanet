@@ -1,166 +1,120 @@
-# app/routes/auth.py
+# backend/app/routes/auth.py
 
-from datetime import timedelta, datetime, timezone
-from typing import Optional, Annotated
-
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, status, Security
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session # type: ignore
-from jose import JWTError, jwt # type: ignore
-
-from app import models, schemas, crud
+from datetime import timedelta
+from app import schemas, crud
 from app.database import get_db
+from app.core.security import create_access_token, verify_password, decode_token
 from app.core.config import settings
+from app.models import Salao, Profissional, Cliente # Importe os modelos
 
-from passlib.context import CryptContext # type: ignore
+router = APIRouter()     
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
-router = APIRouter()
-
-# Configuração de segurança para JWT
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-oauth2_scheme_cliente = OAuth2PasswordBearer(tokenUrl="token_cliente")
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# As configurações são lidas do arquivo core/config.py
-SECRET_KEY = settings.SECRET_KEY
-ALGORITHM = settings.ALGORITHM
-ACCESS_TOKEN_EXPIRE_MINUTES = 300
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-# Endpoint de login
 @router.post("/token", response_model=schemas.Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    """
+    Autentica um usuário (salão, profissional ou cliente) e retorna um token JWT.
+    """
     user = crud.get_salao_by_email(db, email=form_data.username)
+    user_type = "salao"
 
+    if not user:
+        user = crud.get_profissional_by_email(db, email=form_data.username)
+        user_type = "profissional"
+    
+    if not user:
+        user = crud.get_cliente_by_email(db, email=form_data.username)
+        user_type = "cliente"
+    
     if not user or not verify_password(form_data.password, user.senha_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciais inválidas",
+            detail="Email ou senha incorretos",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+        data={"sub": user.email, "user_type": user_type}, expires_delta=access_token_expires
     )
+    
     return {"access_token": access_token, "token_type": "bearer"}
 
-
-# Dependência para autenticar o salão
-def authenticate_salao(db: Session, email: str, senha: str):
-    salao = crud.get_salao_by_email(db, email=email)
-    if not salao or not verify_password(senha, salao.senha_hash):
-        return False
-    return salao
-
-# Dependência para obter o salão autenticado
-async def get_current_salao(
-    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
-):
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    """
+    Decodifica o token e retorna o usuário atual.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Não foi possível validar as credenciais",
+        detail="Credenciais inválidas",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-        token_data = schemas.TokenData(email=email)
-    except JWTError:
+    payload = decode_token(token)
+    if payload is None:
         raise credentials_exception
-
-    salao = crud.get_salao_by_email(db, email=token_data.email)
-    if salao is None:
+    
+    email = payload.get("sub")
+    user_type = payload.get("user_type")
+    
+    if email is None or user_type is None:
         raise credentials_exception
-    return salao
-
-def get_current_active_salao(current_salao: models.Salao = Depends(get_current_salao)):
-    if not current_salao:
-        raise HTTPException(status_code=400, detail="Salão inativo")
-    return current_salao
-
-def get_password_hash(password: str):
-    return pwd_context.hash(password)
-
-
-
-# Dependência para obter o profissional autenticado
-async def get_current_active_profissional(
-     token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
-):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Não foi possível validar as credenciais",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-        token_data = schemas.TokenData(email=email)
-    except JWTError:
-        raise credentials_exception
-
-    profissional = crud.get_profissional_by_email(db, email=token_data.email)
-    if profissional is None:
-        raise credentials_exception
-    return profissional
-
-
-# Dependência para obter o cliente autenticado
-
-def authenticate_cliente(db: Session, email: str, senha: str):
-    cliente = crud.get_cliente_by_email(db, email=email)
-    if not cliente or not verify_password(senha, cliente.senha_hash):
-        return False
-    return cliente
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+    
+    if user_type == "salao":
+        user = crud.get_salao_by_email(db, email=email)
+    elif user_type == "profissional":
+        user = crud.get_profissional_by_email(db, email=email)
+    elif user_type == "cliente":
+        user = crud.get_cliente_by_email(db, email=email)
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+        user = None
 
-def get_current_cliente(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme_cliente)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Não foi possível validar as credenciais",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-    except JWTError:
+    if user is None:
         raise credentials_exception
-    cliente = crud.get_cliente_by_email(db, email=email)
-    if cliente is None:
-        raise credentials_exception
-    return cliente
+    
+    return user, user_type
 
-def get_current_active_cliente(current_cliente: Annotated[models.Cliente, Depends(get_current_cliente)]):
-    if not current_cliente.is_active:
-        raise HTTPException(status_code=400, detail="Conta do cliente inativa")
-    return current_cliente
+def get_current_active_salao(current_user_data: tuple = Depends(get_current_user)):
+    """
+    Dependência para obter um salão ativo.
+    """
+    user, user_type = current_user_data
+    if user_type != "salao":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso negado. Apenas salões podem realizar esta ação."
+        )
+   
+    return user
+
+def get_current_active_profissional(current_user_data: tuple = Depends(get_current_user)):
+    """
+    Dependência para obter um profissional ativo.
+    """
+    user, user_type = current_user_data
+    if user_type != "profissional":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso negado. Apenas profissionais podem realizar esta ação."
+        )
+    return user
+
+def get_current_active_cliente(current_user_data: tuple = Depends(get_current_user)):
+    """
+    Dependência para obter um cliente ativo.
+    """
+    user, user_type = current_user_data
+    if user_type != "cliente":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso negado. Apenas clientes podem realizar esta ação."
+        )
+    # A verificação 'is_active' pode ser adicionada se houver um campo no modelo
+    # if not user.is_active:
+    #     raise HTTPException(status_code=400, detail="Cliente inativo")
+    return user

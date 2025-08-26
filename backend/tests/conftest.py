@@ -13,7 +13,6 @@ from httpx import AsyncClient, ASGITransport
 from sqlalchemy import create_engine # type: ignore
 from sqlalchemy.orm import sessionmaker # type: ignore
 
-
 from app.main import app
 from app.database import Base, get_db
 

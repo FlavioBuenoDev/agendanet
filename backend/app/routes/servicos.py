@@ -13,7 +13,7 @@ router = APIRouter(
     tags=["Serviços"]
 )
 
-@router.post("/", response_model=schemas.Servico, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=schemas.ServicoRead, status_code=status.HTTP_201_CREATED)
 def create_servico_for_salao(
     servico: schemas.ServicoCreate,
     db: Session = Depends(get_db),
@@ -24,7 +24,7 @@ def create_servico_for_salao(
         
     return crud.create_servico(db=db, servico=servico)
 
-@router.get("/", response_model=List[schemas.Servico])
+@router.get("/", response_model=List[schemas.ServicoRead])
 def read_servicos(
     skip: int = 0, 
     limit: int = 100, 
@@ -34,7 +34,7 @@ def read_servicos(
     servicos = crud.get_servicos_by_salao(db, salao_id=current_salao.id, skip=skip, limit=limit)
     return servicos
 
-@router.get("/{servico_id}", response_model=schemas.Servico)
+@router.get("/{servico_id}", response_model=schemas.ServicoRead)
 def read_servico(
     servico_id: int, 
     db: Session = Depends(get_db),
@@ -45,7 +45,7 @@ def read_servico(
         raise HTTPException(status_code=404, detail="Serviço não encontrado")
     return db_servico
 
-@router.put("/{servico_id}", response_model=schemas.Servico)
+@router.put("/{servico_id}", response_model=schemas.ServicoRead)
 def update_servico(
     servico_id: int, 
     servico: schemas.ServicoUpdate,

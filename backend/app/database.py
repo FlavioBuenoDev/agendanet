@@ -1,3 +1,26 @@
+# backend/app/database.py
+
+from sqlalchemy import create_engine # type: ignore
+from sqlalchemy.orm import sessionmaker, declarative_base # type: ignore # Importação corrigida
+from app.core.config import settings
+
+# Use a DATABASE_URL do arquivo de configurações
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base = declarative_base()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+'''
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine # type: ignore
@@ -24,6 +47,7 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread
                        
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 # Base = declarative_base()
 Base.metadata.create_all(bind=engine)
 
@@ -34,3 +58,5 @@ def get_db():
     finally:
         db.close()
         
+Base = declarative_base()
+'''
